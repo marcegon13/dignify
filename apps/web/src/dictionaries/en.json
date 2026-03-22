@@ -1,0 +1,85 @@
+{
+  "menu": {
+    "home": "Home",
+    "explore": "Explore",
+    "myFavorites": "My Favorites",
+    "profile": "Profile",
+    "yourLibrary": "YOUR LIBRARY",
+    "yourPlaylists": "YOUR PLAYLISTS",
+    "uploadMusic": "Upload Music",
+    "loginToSave": "Log in to save.",
+    "noFavoritesYet": "No favorites yet.",
+    "noPlaylists": "No playlists yet."
+  },
+  "explore": {
+    "title": "Explore",
+    "categories": {
+      "surf": "Surf Vibes",
+      "focus": "Focus",
+      "refi": "Independent ReFi",
+      "new": "New Releases"
+    }
+  },
+  "artist": {
+    "dashboard": "Artist Portal",
+    "myTracks": "My Published Tracks",
+    "totalPlays": "Total Plays",
+    "uploadNew": "Upload New Track",
+    "uploadDialog": {
+      "title": "Upload to Dignify ReFi",
+      "audioFile": "Audio File (MP3/WAV)",
+      "coverImage": "Cover Art (Image)",
+      "trackTitle": "Track Title",
+      "genre": "Genre",
+      "price": "Suggested Price (optional)",
+      "save": "Save",
+      "cancel": "Cancel",
+      "uploading": "Uploading...",
+      "success": "Track uploaded successfully"
+    },
+    "accessDenied": "Access Denied",
+    "mustLogin": "You must log in to publish your music on the Artist Portal.",
+    "login": "Log In",
+    "areYouArtist": "Are you an Artist or Creator?",
+    "upgradeDesc": "To upload albums and see play metrics in Dignify, you need to upgrade your Passport to the Artist role. This will allow you to sign your works and collect ReFi royalties.",
+    "activateRole": "Activate Artist Role",
+    "irrevocable": "Irrevocable action for the 2026 beta pilot",
+    "verifiedOriginal": "Verified Original Artist",
+    "status": "Verification Status",
+    "verified": "Verified",
+    "pending": "Verification Pending",
+    "linkSpotify": "Link Spotify",
+    "linkYoutube": "Link YouTube",
+    "loadingTracks": "Loading tracks...",
+    "noTracksYet": "No music here yet",
+    "noTracksDesc": "Your artist catalog begins when you upload your first track.",
+    "startUploading": "Start Uploading",
+    "inReview": "In Review",
+    "deleteConfirm": "Are you sure you want to permanently delete this track?",
+    "originalBadge": "ORIGINAL",
+    "publicCatalogActivated": "Public Catalog Activated"
+  },
+  "refi": {
+    "myCuration": "REFI (ReFi Points)",
+    "firstDiscoverer": "First Discoverer",
+    "curationPoints": "Curation Points",
+    "hiddenGems": "Hidden Gems"
+  },
+  "player": {
+    "adBlocker": "Respecting your time. Optimizing for the planet...",
+    "playingFrom": "Playing from"
+  },
+  "home": {
+    "searchPlaceholder": "Music for surfing...",
+    "catalogTitle": "The ReFi Catalog",
+    "emptyCatalog": "The catalog is empty.",
+    "startSearching": "Start searching for the first track!",
+    "searchPrecision": "High Precision Search",
+    "noResults": "No agent found",
+    "libraryAlive": "The library is alive. Try something else."
+  },
+  "common": {
+    "errorServer": "Lost connection to the server.",
+    "loading": "Loading..."
+  }
+}

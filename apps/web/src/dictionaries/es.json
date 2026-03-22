@@ -1,0 +1,85 @@
+{
+  "menu": {
+    "home": "Inicio",
+    "explore": "Explorar",
+    "myFavorites": "Mis Favoritos",
+    "profile": "Perfil",
+    "yourLibrary": "TU BIBLIOTECA",
+    "yourPlaylists": "TUS LISTAS",
+    "uploadMusic": "Subir Música",
+    "loginToSave": "Inicia sesión para guardar.",
+    "noFavoritesYet": "No hay favoritos aún.",
+    "noPlaylists": "No tienes listas."
+  },
+  "explore": {
+    "title": "Explorar",
+    "categories": {
+      "surf": "Surf Vibes",
+      "focus": "Focus",
+      "refi": "Independent ReFi",
+      "new": "Novedades"
+    }
+  },
+  "artist": {
+    "dashboard": "Portal del Artista",
+    "myTracks": "Mis Tracks Publicados",
+    "totalPlays": "Reproducciones Totales",
+    "uploadNew": "Subir Nueva Pista",
+    "uploadDialog": {
+      "title": "Subir a Dignify ReFi",
+      "audioFile": "Archivo (MP3/WAV)",
+      "coverImage": "Portada (Imagen)",
+      "trackTitle": "Título del Track",
+      "genre": "Género",
+      "price": "Precio sugerido (opcional)",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "uploading": "Subiendo...",
+      "success": "Pista subida con éxito"
+    },
+    "accessDenied": "Acceso Denegado",
+    "mustLogin": "Debes iniciar sesión para publicar tu música en el Portal del Artista.",
+    "login": "Iniciar Sesión",
+    "areYouArtist": "¿Eres Artista o Creador?",
+    "upgradeDesc": "Para cargar álbumes y ver métricas de reproducción en Dignify, necesitas elevar tu Pasaporte al rol de Artista. Esto te permitirá firmar tus obras y recolectar regalías ReFi.",
+    "activateRole": "Activar Rol de Artista",
+    "irrevocable": "Acción irrevocable para el piloto beta 2026",
+    "verifiedOriginal": "Artista Original Verificado",
+    "status": "Estado de Verificación",
+    "verified": "Verificado",
+    "pending": "Verificación Pendiente",
+    "linkSpotify": "Vincular Spotify",
+    "linkYoutube": "Vincular YouTube",
+    "loadingTracks": "Cargando obras...",
+    "noTracksYet": "Aún no hay música aquí",
+    "noTracksDesc": "Tu catálogo como artista empieza al subir tu primera pista.",
+    "startUploading": "Comenzar a Subir",
+    "inReview": "En Revisión",
+    "deleteConfirm": "¿Seguro que quieres eliminar esta pista permanentemente?",
+    "originalBadge": "ORIGINAL",
+    "publicCatalogActivated": "Catálogo Público Activado"
+  },
+  "refi": {
+    "myCuration": "REFI (Puntos ReFi)",
+    "firstDiscoverer": "Primer Descubridor",
+    "curationPoints": "Puntos de Curación",
+    "hiddenGems": "Joyas Ocultas"
+  },
+  "player": {
+    "adBlocker": "Respetando tu tiempo. Optimizando para el planeta...",
+    "playingFrom": "Reproduciendo desde"
+  },
+  "home": {
+    "searchPlaceholder": "Música para surfear...",
+    "catalogTitle": "El Catálogo ReFi",
+    "emptyCatalog": "El catálogo está vacío.",
+    "startSearching": "¡Comenzá buscando la primera pista!",
+    "searchPrecision": "Búsqueda de Alta Precisión",
+    "noResults": "Ningún agente encontró",
+    "libraryAlive": "La biblioteca está viva. Probá otra cosa."
+  },
+  "common": {
+    "errorServer": "Se perdió la conexión con el servidor.",
+    "loading": "Cargando..."
+  }
+}

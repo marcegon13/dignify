@@ -1,0 +1,172 @@
+generator client {
+  provider        = "prisma-client-js"
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  // extensions = [vector]
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?   @unique
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  birthDate     DateTime? // Fecha de nacimiento obligatoria para "Registro Consciente"
+  role          String    @default("USER") // "USER" or "ARTIST"
+  accounts      Account[]
+  sessions      Session[]
+  favorites     Favorite[]
+  playlists     Playlist[]
+  discoveries   Track[]   @relation("TrackDiscoveries")
+  votes         Vote[]
+  curationPoints Int      @default(0) // Dignity Score ReFi
+  causes        String[]  // Intereses ODS (Clima, Educación, etc.)
+  spotifyId     String?
+  youtubeId     String?
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Artist {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  bio         String?
+  isVerified  Boolean  @default(false)
+  tracks      Track[]
+
+  @@index([name])
+}
+
+model Track {
+  id            String   @id @default(cuid())
+  title         String
+  genre         String?
+  artistId      String
+  artist        Artist   @relation(fields: [artistId], references: [id])
+  duration      Int?     // en segundos
+  thumbnailUrl  String?
+  isrc          String?  // Identificador internacional legal
+  sources       Source[] // Múltiples fuentes para una misma canción
+  favorites     Favorite[]
+  playlists     PlaylistTrack[]
+  updatedAt     DateTime @updatedAt @default(now())
+  votes         Vote[]
+  status        TrackStatus @default(PENDING)
+  
+  // AI & ReFi System
+  // embedding     Unsupported("vector(1536)")? // DESCARTADO LOCALMENTE
+  discovererId  String?
+  discoverer    User?    @relation("TrackDiscoveries", fields: [discovererId], references: [id])
+  cause         String?  // ODS cause this track is dedicated to (e.g. Clima)
+  
+  // Agregamos un constraint para poder buscar y upsertar fácilmente
+  @@unique([title, artistId])
+  @@index([title])
+  @@index([genre])
+}
+
+model Source {
+  id            String   @id @default(cuid())
+  trackId       String
+  track         Track    @relation(fields: [trackId], references: [id])
+  provider      String   // "YOUTUBE", "SOUNDCLOUD", "BANDCAMP", "SELF_HOSTED"
+  providerId    String   // ID del video o track en la plataforma original
+  url           String
+  quality       String?  // "HD", "LQ"
+  isOfficial    Boolean  @default(false)
+  updatedAt     DateTime @updatedAt @default(now())
+
+  @@unique([provider, providerId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  trackId   String
+  isFirstDiscovery Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, trackId])
+}
+
+model Playlist {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks      PlaylistTrack[]
+}
+
+model PlaylistTrack {
+  id         String   @id @default(cuid())
+  playlistId String
+  trackId    String
+  addedAt    DateTime @default(now())
+
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  track      Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, trackId])
+}
+
+model Vote {
+  id        String   @id @default(cuid())
+  userId    String
+  trackId   String
+  week      Int      // Semana del año (formato YYYYWW)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, trackId, week])
+}
+
+enum TrackStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}

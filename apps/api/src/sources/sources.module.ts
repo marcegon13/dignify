@@ -1,0 +1,18 @@
+import { Module } from '@nestjs/common';
+import { SourcesService } from './sources.service';
+import { YoutubeConnector } from './connectors/youtube.connector';
+import { SoundcloudConnector } from './connectors/soundcloud.connector';
+import { BandcampConnector } from './connectors/bandcamp.connector';
+
+@Module({
+  providers: [
+    SourcesService,
+    YoutubeConnector,
+    SoundcloudConnector,
+    BandcampConnector,
+  ],
+  exports: [
+    SourcesService,
+  ],
+})
+export class SourcesModule {}
