@@ -56,6 +56,7 @@ const authOptions: NextAuthOptions = {
     async jwt({ token, user }: any) {
       if (user) {
         token.id = user.id;
+        token.picture = user.image;
       }
       return token;
     },
@@ -63,6 +64,7 @@ const authOptions: NextAuthOptions = {
     async session({ session, token }: any) {
       if (session.user) {
         (session.user as any).id = token.id;
+        session.user.image = token.picture;
       }
       return session;
     },
