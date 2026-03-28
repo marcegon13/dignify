@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useI18n } from '@/providers/I18nProvider';
 import Sidebar from './Sidebar';
+import { AnimatedLogo } from '../shared/AnimatedLogo';
 
 export function MobileHeader() {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,16 +14,9 @@ export function MobileHeader() {
 
   return (
     <>
-      <header className="md:hidden fixed top-0 left-0 right-0 pt-[env(safe-area-inset-top)] bg-black/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-4 z-[120]">
+      <header className="md:hidden fixed top-0 left-0 right-0 pt-[env(safe-area-inset-top)] bg-black/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-4 z-header">
         <Link href={`/${lang}`} className="flex items-center py-4">
-            <div className="relative h-14 w-44">
-              <Image 
-                src="/logo_dignify.JPG" 
-                alt="Dignify" 
-                fill 
-                className="object-contain brightness-110 filter drop-shadow-md" 
-              />
-            </div>
+            <AnimatedLogo className="h-14 w-44" />
         </Link>
         
         <button 
@@ -41,9 +35,9 @@ export function MobileHeader() {
            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsOpen(false)}></div>
            
            {/* Sidebar drawer content */}
-           <div className="absolute top-0 right-0 w-4/5 max-w-[300px] h-full bg-neutral-950 border-l border-white/10 animate-in slide-in-from-right duration-500 overflow-y-auto pt-16 flex flex-col">
+           <div className="absolute top-0 right-0 w-4/5 max-w-[300px] h-full bg-neutral-950 border-l border-white/10 animate-in slide-in-from-right duration-500 overflow-y-auto pt-24 flex flex-col uppercase tracking-tighter">
               <div className="flex-1 flex flex-col h-full overflow-y-auto" onClick={() => setIsOpen(false)}>
-                 <Sidebar isMobileDrawer={true} />
+                  <Sidebar isMobileDrawer={true} lang={lang} dict={dict} />
               </div>
            </div>
         </div>

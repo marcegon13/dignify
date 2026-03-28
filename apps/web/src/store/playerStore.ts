@@ -8,6 +8,7 @@ export interface QueuedTrack {
   artist: string;
   thumbnailUrl?: string;
   provider: string;
+  sources?: { provider: string; providerId: string; url: string; isOfficial: boolean }[];
 }
 
 interface PlayerState {
@@ -31,6 +32,7 @@ interface PlayerState {
   setProgress: (currentTime: number, duration: number) => void;
   seekTo: (seconds: number) => void;
   clearSeek: () => void;
+  stop: () => void;
 }
 
 export const usePlayerStore = create<PlayerState>()(
@@ -58,6 +60,7 @@ export const usePlayerStore = create<PlayerState>()(
       setProgress: (currentTime, duration) => set({ currentTime, duration }),
       seekTo: (seconds) => set({ seekPosition: seconds }),
       clearSeek: () => set({ seekPosition: null }),
+      stop: () => set({ currentTrack: null, isPlaying: false, isBuffering: false, currentTime: 0, duration: 0 }),
     }),
     {
       name: 'dignify-player-storage',

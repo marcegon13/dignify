@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { usePlayerStore } from '@/store/playerStore';
 import { useI18n } from '@/providers/I18nProvider';
 import { useSession } from 'next-auth/react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Music, Loader2, ShieldAlert } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Music, Loader2, ShieldAlert, X } from 'lucide-react';
 import Image from 'next/image';
 
 const YoutubeEngine = dynamic(() => import('./YoutubeEngine'), { ssr: false });
@@ -13,7 +13,7 @@ const SoundcloudEngine = dynamic(() => import('./SoundcloudEngine'), { ssr: fals
 const NativeAudioEngine = dynamic(() => import('./NativeAudioEngine'), { ssr: false });
 
 export function Player() {
-  const { currentTrack, isPlaying, isBuffering, volume, setVolume, play, pause, togglePlay, toggleMute, isAdDetected } = usePlayerStore();
+  const { currentTrack, isPlaying, isBuffering, volume, setVolume, play, pause, togglePlay, toggleMute, isAdDetected, stop } = usePlayerStore();
   const { data: session } = useSession();
   const { dict } = useI18n(); 
   const currentTime = usePlayerStore((s) => s.currentTime);
@@ -52,7 +52,7 @@ export function Player() {
         album: 'Dignify ReFi',
         artwork: [
           { 
-            src: currentTrack.thumbnailUrl || 'https://via.placeholder.com/512', 
+            src: currentTrack.thumbnailUrl || '/logo_dignify.JPG', 
             sizes: '512x512', 
             type: 'image/jpeg' 
           },
@@ -79,39 +79,56 @@ export function Player() {
   const currentPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   const renderEngine = () => {
-    if (!currentTrack) return null;
-
-    switch (currentTrack.provider) {
-      case 'YOUTUBE':
-        return <YoutubeEngine providerId={currentTrack.id} isPlaying={isPlaying} volume={volume} onPlay={play} onPause={pause} />;
-      case 'SOUNDCLOUD':
-        return <SoundcloudEngine providerId={currentTrack.id} isPlaying={isPlaying} volume={volume} onPlay={play} onPause={pause} />;
-      case 'DIGNIFY':
-        return <NativeAudioEngine providerId={currentTrack.id} isPlaying={isPlaying} volume={volume} onPlay={play} onPause={pause} />;
-      default:
-        // Para BANDCAMP podríamos generar un token pre-autorizado o un <audio src={currentTrack.url} />
-        return null;
-    }
+    return (
+      <div className="hidden">
+        {/* Siempre montados para evitar lag de carga repetida */}
+        <YoutubeEngine 
+          providerId={
+            currentTrack?.provider === 'YOUTUBE' 
+              ? currentTrack.id 
+              : currentTrack?.provider === 'SPOTIFY' || currentTrack?.provider === 'DEEZER'
+              ? currentTrack.sources?.find(s => s.provider === 'YOUTUBE')?.providerId || ''
+              : ''
+          } 
+          isPlaying={isPlaying && (currentTrack?.provider === 'YOUTUBE' || currentTrack?.provider === 'SPOTIFY' || currentTrack?.provider === 'DEEZER')} 
+          volume={volume} 
+          onPlay={play} 
+          onPause={pause} 
+        />
+        
+        {currentTrack?.provider === 'SOUNDCLOUD' && (
+          <SoundcloudEngine 
+            providerId={currentTrack.id} 
+            isPlaying={isPlaying} 
+            volume={volume} 
+            onPlay={play} 
+            onPause={pause} 
+          />
+        )}
+        
+        {currentTrack?.provider === 'DIGNIFY' && (
+          <NativeAudioEngine 
+            providerId={currentTrack.id} 
+            isPlaying={isPlaying} 
+            volume={volume} 
+            onPlay={play} 
+            onPause={pause} 
+          />
+        )}
+      </div>
+    );
   };
 
   return (
-    <div className="relative w-full md:w-full h-[72px] md:h-[84px] shrink-0 bg-neutral-900/90 md:bg-neutral-950/90 backdrop-blur-3xl border md:border-t border-white/10 md:border-white/5 flex md:grid md:grid-cols-3 items-center px-3 md:px-6 z-50 overflow-hidden md:rounded-none rounded-2xl mx-auto max-w-[96vw] md:max-w-none shadow-2xl md:shadow-none">
+    <div className={!currentTrack ? "hidden" : "fixed bottom-0 left-0 right-0 z-player w-full px-2 md:px-0 pb-[env(safe-area-inset-bottom)] bg-black/40 backdrop-blur-md animate-in slide-in-from-bottom-full duration-300"}>
+    <div className="relative w-full md:w-full h-[72px] md:h-[84px] shrink-0 bg-neutral-900/90 md:bg-neutral-950/90 backdrop-blur-3xl border md:border-t border-white/10 md:border-white/5 flex justify-between md:grid md:grid-cols-3 items-center px-3 md:px-6 z-player overflow-hidden md:rounded-none rounded-2xl mx-auto max-w-[96vw] md:max-w-none shadow-2xl md:shadow-none">
       
       {/* AI ANTI-AD OVERLAY */}
       {isAdDetected && (
-        <div className="fixed md:absolute inset-0 z-150 bg-emerald-950/90 md:bg-emerald-950/90 backdrop-blur-2xl flex items-center justify-center animate-in fade-in slide-in-from-bottom-2 duration-700 md:rounded-none rounded-2xl">
-           <div className="flex flex-col items-center space-y-4 max-w-[80vw] text-center">
-              <div className="w-16 h-16 bg-black/40 rounded-full flex items-center justify-center border border-emerald-500/30">
-                 <ShieldAlert className="w-8 h-8 text-emerald-400 animate-pulse" />
-              </div>
-              <div className="space-y-1">
-                 <p className="text-xl font-black text-white uppercase tracking-tighter">
-                   {dict.player.adBlocker}
-                 </p>
-                 <p className="text-[10px] text-emerald-500/60 font-medium uppercase tracking-[0.2em]">
-                   Dignify ReFi Protect — Powered by ACRCloud SIM
-                 </p>
-              </div>
+        <div className="absolute inset-0 bg-emerald-500/90 backdrop-blur-md z-player flex items-center justify-center animate-in fade-in zoom-in duration-300">
+           <div className="flex items-center gap-3 text-black font-black italic tracking-tighter">
+             <div className="w-2 h-2 rounded-full bg-black animate-ping" />
+             {dict?.player?.adBlocker || "AD DETECTED"} - DIGNIFY AI SHIELD ACTIVE
            </div>
         </div>
       )}
@@ -120,29 +137,22 @@ export function Player() {
       {renderEngine()}
 
       {/* TRACK INFO (LEFT - Expand on Mobile) */}
-      <div className="flex items-center space-x-3 md:space-x-4 min-w-0 flex-1 md:justify-self-start">
+      <div className="flex items-center min-w-0 flex-1 md:flex-none">
         {currentTrack ? (
           <>
             <div className="relative w-10 h-10 md:w-12 md:h-12 shrink-0">
                <Image 
-                 src={currentTrack.thumbnailUrl || '/api/placeholder/48/48'} 
+                 src={currentTrack.thumbnailUrl || '/logo_dignify.JPG'} 
                  alt={currentTrack.title} 
                  fill
                  className="rounded bg-neutral-900 object-cover shadow-lg"
                />
             </div>
-            <div className="flex flex-col truncate pr-2 md:pr-4">
-              <div className="flex items-center space-x-2 truncate">
-                <span className="text-white text-[13px] md:text-sm font-semibold truncate hover:underline cursor-pointer">
+            <div className="flex flex-col flex-1 min-w-0 mx-3 md:mx-4 text-left">
+                <h3 className="text-sm md:text-base font-bold text-white truncate max-w-[120px] md:max-w-none hover:text-emerald-400 transition-colors pointer-events-auto cursor-pointer">
                   {currentTrack.title}
-                </span>
-                <span className="px-1.5 py-0.5 bg-neutral-800 text-[8px] md:text-[9px] font-black text-neutral-500 rounded uppercase tracking-tighter shrink-0 border border-white/5 hidden sm:inline-block">
-                   {currentTrack.provider === 'DIGNIFY' ? 'DIGNIFY HQ' : currentTrack.provider}
-                </span>
-              </div>
-              <span className="text-neutral-400 text-[11px] md:text-xs truncate hover:underline cursor-pointer">
-                {currentTrack.artist}
-              </span>
+                </h3>
+                <p className="text-[10px] md:text-xs text-neutral-400 truncate max-w-[120px] md:max-w-none">{currentTrack.artist}</p>
             </div>
           </>
         ) : (
@@ -236,6 +246,15 @@ export function Player() {
         </div>
       </div>
 
+      <button 
+        onClick={stop}
+        className="p-2.5 bg-black/50 md:bg-transparent text-white md:text-neutral-500 hover:text-emerald-400 transition-all hover:bg-white/5 rounded-full ml-1 md:ml-4 shrink-0 border border-white/10 md:border-transparent shadow-xl md:shadow-none active:scale-90"
+        title="Cerrar reproductor"
+      >
+        <X className="w-6 h-6 md:w-6 md:h-6" />
+      </button>
+
+    </div>
     </div>
   );
 }

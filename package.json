@@ -16,5 +16,10 @@
     "db:push": "npx prisma db push --schema=packages/database/prisma/schema.prisma",
     "db:migrate": "npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma",
     "db:generate": "npx prisma generate --schema=packages/database/prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "^7.5.0",
+    "pg": "^8.20.0"
   }
 }

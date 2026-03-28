@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import { TrackItem } from '@/components/shared/TrackItem';
 import { Heart, Loader2 } from 'lucide-react';
 
@@ -33,9 +33,15 @@ export default function LibraryPage() {
         </div>
 
         {!session ? (
-          <div className="text-center mt-32 p-12 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-lg">
+          <div className="text-center mt-32 p-12 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-lg flex flex-col items-center">
             <span className="text-5xl block mb-6">🔒</span>
             <p className="text-neutral-300 font-medium text-xl">Inicia sesión para ver tu biblioteca.</p>
+            <button
+              onClick={() => signIn()}
+              className="mt-6 px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl transition-all transform active:scale-95 shadow-xl shadow-emerald-500/20"
+            >
+              Iniciar Sesión Ahora
+            </button>
           </div>
         ) : isFetching ? (
           <div className="flex items-center justify-center mt-32">

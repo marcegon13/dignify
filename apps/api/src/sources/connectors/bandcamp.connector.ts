@@ -17,8 +17,8 @@ export class BandcampConnector implements ISourceConnector {
       
       const data = await response.json();
       
-      // Filtermos resultados de tipo "t" (track) o "a" (album) si se requiere
-      const tracks = data.auto.results
+      // Filtramos resultados de tipo "t" (track) o "a" (album) si se requiere
+      const tracks = (data?.auto?.results || [])
         .filter((item: any) => item.type === 't')
         .slice(0, maxResults);
 

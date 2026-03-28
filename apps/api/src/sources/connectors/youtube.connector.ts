@@ -6,7 +6,7 @@ import { RawSourceData } from '../interfaces/raw-source-data.interface';
 export class YoutubeConnector implements ISourceConnector {
   public readonly providerName = 'YOUTUBE';
   private readonly logger = new Logger(YoutubeConnector.name);
-  private readonly apiKey = process.env.YOUTUBE_API_KEY;
+  private readonly apiKey = process.env.YOUTUBE_API_KEY || 'AIzaSyCPaHAvfRXBLajzZHNSlajQDc0Gx7-xFbU';
   private readonly baseUrl = 'https://www.googleapis.com/youtube/v3';
 
   constructor() {
@@ -15,7 +15,7 @@ export class YoutubeConnector implements ISourceConnector {
     }
   }
 
-  async search(query: string, maxResults: number = 10): Promise<RawSourceData[]> {
+  async search(query: string, maxResults: number = 30): Promise<RawSourceData[]> {
     if (!this.apiKey) return [];
 
     try {
@@ -27,12 +27,18 @@ export class YoutubeConnector implements ISourceConnector {
       searchUrl.searchParams.append('maxResults', maxResults.toString());
       searchUrl.searchParams.append('key', this.apiKey);
 
+      console.log('Searching YouTube with URL:', searchUrl.toString());
+      console.log('Using API Key (last 4 chars):', this.apiKey?.slice(-4));
+
       const response = await fetch(searchUrl.toString());
       if (!response.ok) {
+        const errorBody = await response.text();
+        console.error('YouTube API ERROR BODY:', errorBody);
         throw new Error(`YouTube API returned ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log('YouTube Search results count:', data.items?.length || 0);
       
       return data.items.map((item: any) => ({
         provider: this.providerName,

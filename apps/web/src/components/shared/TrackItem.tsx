@@ -1,6 +1,6 @@
 'use client';
 
-import { Play, CheckCircle, Heart, ExternalLink, Music, Youtube, Headphones, PlusSquare, Sparkles } from 'lucide-react';
+import { Play, CheckCircle, Heart, ExternalLink, Music, Youtube, Headphones, PlusSquare, Sparkles, Disc } from 'lucide-react';
 import { usePlayerStore } from '@/store/playerStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
@@ -9,6 +9,7 @@ import Image from 'next/image';
 
 interface Source {
   provider: string;
+  providerId: string;
   url: string;
   quality?: string;
   isOfficial: boolean;
@@ -31,6 +32,7 @@ const ProviderIcon = ({ provider, className }: { provider: string, className?: s
   if (provider === 'YOUTUBE') return <Youtube className={className} />;
   if (provider === 'SOUNDCLOUD') return <Headphones className={className} />;
   if (provider === 'BANDCAMP') return <Music className={className} />;
+  if (provider === 'DEEZER') return <Disc className={className} />;
   if (provider === 'DIGNIFY') return <Sparkles className={className} />;
   return <Play className={className} />;
 };
@@ -120,20 +122,17 @@ export function TrackItem({ track }: TrackItemProps) {
   });
 
   const handlePlay = (e: React.MouseEvent) => {
-    // Prevent play when clicking the heart or external link or source pins
     const target = e.target as HTMLElement;
     if (target.closest('.no-play')) return;
 
-    // To play we must send identifying criteria. We pass the resolved provider URL/ID
-    const providerId = mainSource.url.split('v=')[1] || track.id; // basic extraction fallback
-
     setTrack({
-      id: providerId,
+      id: track.id, // Usamos la Llave Maestra (YouTube ID) preparada por el servidor
       internalTrackId: track.internalTrackId,
       title: track.title,
       artist: track.artist,
       thumbnailUrl: track.thumbnailUrl,
-      provider: mainSource?.provider ?? 'YOUTUBE',
+      provider: track.sources.some(s => s.provider === 'YOUTUBE') ? 'YOUTUBE' : mainSource?.provider ?? 'YOUTUBE',
+      sources: track.sources,
     });
   };
 
@@ -144,7 +143,7 @@ export function TrackItem({ track }: TrackItemProps) {
     >
       <div className="relative aspect-square w-full mb-4 overflow-hidden rounded-lg shadow-md">
         <Image 
-          src={track.thumbnailUrl || '/api/placeholder/400/400'} 
+          src={track.thumbnailUrl || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop'} 
           alt={track.title}
           fill
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"

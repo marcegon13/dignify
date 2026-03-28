@@ -1,5 +1,10 @@
 export interface RawSourceData {
-  provider: 'YOUTUBE' | 'SOUNDCLOUD' | 'BANDCAMP' | 'SELF_HOSTED';
+  provider:  | 'YOUTUBE'
+  | 'SOUNDCLOUD'
+  | 'BANDCAMP'
+  | 'SPOTIFY'
+  | 'DEEZER'
+  | 'SELF_HOSTED';
   providerId: string;
   title: string;
   artistName: string;

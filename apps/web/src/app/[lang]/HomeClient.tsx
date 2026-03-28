@@ -46,7 +46,7 @@ export default function Home() {
   });
 
   return (
-    <div className="flex flex-col h-full bg-linear-to-b from-neutral-900/50 to-neutral-950/90 overflow-y-auto px-4 md:px-6 py-4 pb-16">
+    <div className="flex flex-col bg-linear-to-b from-neutral-900/50 to-neutral-950/90 px-4 md:px-6 py-4 pb-48">
       
       {/* Search Input Area */}
       <div className="sticky top-0 z-10 bg-neutral-950/80 backdrop-blur-2xl border-b border-white/5 pb-4 pt-2 -mx-4 md:-mx-6 px-4 md:px-6 mb-6 shadow-sm">
@@ -107,11 +107,11 @@ export default function Home() {
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <h2 className="text-lg md:text-2xl font-bold text-white mb-6 md:mb-8 tracking-tight flex items-center">
               <span className="w-2 h-2 rounded-full bg-emerald-500 mr-3 animate-pulse"></span>
-              {dict.home.searchPrecision}
+              {dict.home?.searchPrecision || "High Precision Search"}
             </h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 gap-y-8 md:gap-y-10">
-              {results.map((track: any) => (
-                <TrackItem key={track.id} track={track} />
+              {results.map((track: any, index: number) => (
+                <TrackItem key={`search-${track.id || index}`} track={track} />
               ))}
             </div>
           </div>

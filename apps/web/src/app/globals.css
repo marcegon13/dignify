@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
+
+/* @import "shadcn/tailwind.css"; <- Removed as it's injecting unknown classes in TW4 */
 
 /* --- CONFIGURACIÓN DE SAFE AREAS PARA MÓVILES --- */
 :root {
@@ -29,6 +30,11 @@
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
+
+  /* Capas de Profundidad Dignify */
+  --z-index-player: 110;
+  --z-index-header: 120;
+  --z-index-mobile-nav: 60;
 }
 
 .dark {
@@ -75,15 +81,48 @@
 
   html,
   body {
-    /* Asegura que el scroll no haga cosas raras con el notch */
-    @apply h-full overflow-hidden;
+    /* Asegura que el scroll se comporte de forma natural */
     background-color: black;
   }
 
   body {
     @apply bg-background text-foreground font-sans;
-    /* Esto es clave: evita que el contenido se "meta" debajo de las barras si no usamos clases específicas */
     padding-top: var(--safe-area-top);
     padding-bottom: var(--safe-area-bottom);
+  }
+
+  /* --- SCROLLBAR PREMIUM DIGNIFY --- */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.65 0.15 150 / 0.2);
+    border-radius: 10px;
+    transition: all 0.3s;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.65 0.15 150 / 0.5);
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-color: oklch(0.65 0.15 150 / 0.2) transparent;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }

@@ -60,7 +60,8 @@ export default function NativeAudioEngine({
   return (
     <audio 
       ref={audioRef}
-      src={providerId} // Using providerId as direct url for DIGNIFY provider
+      src={providerId} 
+      preload="auto"
       onTimeUpdate={handleTimeUpdate}
       onPlay={() => { setBuffering(false); if (!isPlaying) onPlay(); }}
       onPause={() => { if (isPlaying) onPause(); }}

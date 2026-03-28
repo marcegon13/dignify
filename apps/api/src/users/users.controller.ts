@@ -1,5 +1,7 @@
-import { Controller, Get, Patch, Body, Param, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Body, Param, BadRequestException, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { PrismaService } from '../common/prisma.service';
+import { StorageService } from '../common/storage.service';
 import { z } from 'zod';
 
 const UserUpdateSchema = z.object({
@@ -7,80 +9,46 @@ const UserUpdateSchema = z.object({
   birthDate: z.string().datetime().optional(),
   image: z.string().url().optional(),
   role: z.enum(['USER', 'ARTIST']).optional(),
-  spotifyLink: z.string().url().optional(),
-  youtubeLink: z.string().url().optional(),
-  isVerified: z.boolean().optional(),
+  spotifyId: z.string().optional(),
+  youtubeId: z.string().optional(),
 });
+
+import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly userService: UsersService
+  ) {}
 
   @Get(':email')
   async getUser(@Param('email') email: string) {
-    const user = await (this.prisma.user as any).findUnique({
-      where: { email },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        birthDate: true,
-        role: true,
-        curationPoints: true,
-        causes: true,
-        spotifyLink: true,
-        youtubeLink: true,
-        isVerified: true,
-        favorites: {
-           where: { isFirstDiscovery: true },
-           take: 1
-        }
-      }
-    });
-
-    if (!user) return { data: null };
-    
-    return { 
-       data: {
-         ...user,
-         hasFirstDiscovery: user.favorites.length > 0
-       }
-    };
+    const user = await this.userService.findByEmail(email);
+    return { data: user };
   }
 
   @Patch(':email')
-  async updateProfile(@Param('email') email: string, @Body() body: any) {
+  async updateProfile(@Param('email') email: string, @Body() body: unknown) {
     const result = UserUpdateSchema.safeParse(body);
-    if (!result.success) {
-      throw new BadRequestException(result.error.format());
-    }
+    if (!result.success) throw new BadRequestException(result.error.format());
 
     try {
-      const data = { ...result.data };
-      if (data.birthDate) {
-        (data as any).birthDate = new Date(data.birthDate);
-      }
-
-      const updated = await (this.prisma.user as any).update({
-        where: { email },
-        data
-      });
+      const updated = await this.userService.update(email, result.data);
       return { data: updated };
-    } catch (e) {
-      if ((e as any).code === 'P2002') {
-        throw new BadRequestException("El nombre de usuario ya está en uso.");
-      }
+    } catch (e: any) {
+      if (e.message) throw new BadRequestException(e.message);
       throw e;
     }
   }
 
-  @Patch(':email/causes')
-  async updateUserCauses(@Param('email') email: string, @Body() dto: { causes: string[] }) {
-    const updated = await (this.prisma.user as any).update({
-      where: { email },
-      data: { causes: dto.causes }
-    });
-    return { data: updated };
+  @Post(':email/avatar')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadAvatar(
+    @Param('email') email: string,
+    @UploadedFile() file: any
+  ) {
+    if (!file) throw new BadRequestException("Archivo no subido.");
+    const user = await this.userService.uploadAvatar(email, file);
+    return { data: user };
   }
 }

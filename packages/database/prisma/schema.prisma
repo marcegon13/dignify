@@ -1,11 +1,10 @@
-generator client {
-  provider        = "prisma-client-js"
+datasource db {
+  provider = "postgresql"
 }
 
-datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
-  // extensions = [vector]
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../apps/web/node_modules/.prisma/client"
 }
 
 model User {
@@ -26,6 +25,12 @@ model User {
   causes        String[]  // Intereses ODS (Clima, Educación, etc.)
   spotifyId     String?
   youtubeId     String?
+  
+  // Perfil de Artista vinculado
+  artist        Artist?   @relation("UserToArtist")
+  
+  // Seguimientos (Social)
+  following     Follow[]  @relation("UserFollowing")
 }
 
 model Account {
@@ -66,11 +71,29 @@ model VerificationToken {
 model Artist {
   id          String   @id @default(cuid())
   name        String   @unique
+  slug        String?  @unique
   bio         String?
+  image       String?  // Logo o foto de perfil del artista
+  bannerImage String?
   isVerified  Boolean  @default(false)
+  
+  // Redes Sociales
+  instagram   String?
+  twitter     String?
+  website     String?
+  
+  // Relación con Usuario
+  userId      String?  @unique
+  user        User?    @relation("UserToArtist", fields: [userId], references: [id])
+  
+  // Tracks
   tracks      Track[]
+  
+  // Seguidores
+  followers   Follow[] @relation("ArtistFollowers")
 
   @@index([name])
+  @@index([slug])
 }
 
 model Track {
@@ -90,12 +113,10 @@ model Track {
   status        TrackStatus @default(PENDING)
   
   // AI & ReFi System
-  // embedding     Unsupported("vector(1536)")? // DESCARTADO LOCALMENTE
   discovererId  String?
   discoverer    User?    @relation("TrackDiscoveries", fields: [discovererId], references: [id])
   cause         String?  // ODS cause this track is dedicated to (e.g. Clima)
   
-  // Agregamos un constraint para poder buscar y upsertar fácilmente
   @@unique([title, artistId])
   @@index([title])
   @@index([genre])
@@ -163,6 +184,18 @@ model Vote {
   track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
 
   @@unique([userId, trackId, week])
+}
+
+model Follow {
+  id        String   @id @default(cuid())
+  userId    String
+  artistId  String
+  createdAt DateTime @default(now())
+
+  user      User     @relation("UserFollowing", fields: [userId], references: [id], onDelete: Cascade)
+  artist    Artist   @relation("ArtistFollowers", fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, artistId])
 }
 
 enum TrackStatus {

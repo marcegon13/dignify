@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { YoutubeConnector } from './connectors/youtube.connector';
 import { SoundcloudConnector } from './connectors/soundcloud.connector';
 import { BandcampConnector } from './connectors/bandcamp.connector';
+import { DeezerConnector } from './connectors/deezer.connector';
 import { RawSourceData } from './interfaces/raw-source-data.interface';
 import { ISourceConnector } from './interfaces/source-connector.interface';
 
@@ -14,9 +15,11 @@ export class SourcesService {
     private readonly youtubeConnector: YoutubeConnector,
     private readonly soundcloudConnector: SoundcloudConnector,
     private readonly bandcampConnector: BandcampConnector,
+    private readonly deezerConnector: DeezerConnector,
   ) {
     this.connectors = [
       this.youtubeConnector,
+      this.deezerConnector,
       this.soundcloudConnector,
       this.bandcampConnector,
     ];
@@ -25,7 +28,7 @@ export class SourcesService {
   /**
    * Dispatches search query to all registered connectors simultaneously
    */
-  async searchAll(query: string, maxResultsPerConnector: number = 5): Promise<RawSourceData[]> {
+  async searchAll(query: string, maxResultsPerConnector: number = 30): Promise<RawSourceData[]> {
     const promises = this.connectors.map(connector => connector.search(query, maxResultsPerConnector));
     
     // Using Promise.allSettled so one failing connector won't crash the entire request

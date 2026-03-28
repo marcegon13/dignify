@@ -16,6 +16,7 @@ export interface SearchResult {
   cause?: string;
   sources: {
     provider: string;
+    providerId: string;
     url: string;
     quality?: string;
     isOfficial: boolean;
@@ -32,45 +33,54 @@ export class SearchService {
   ) {}
 
   async searchMusic(query: string): Promise<SearchResult[]> {
-    // 1. Prioridad Independiente (DIGNIFY DIRECTO)
-    const matchingLocalTracks = await (this.prisma.track as any).findMany({
-      where: {
-        status: 'APPROVED',
-        artist: { isVerified: true }, // PRIORIDAD VERIFICADOS
-        OR: [
-          { title: { contains: query, mode: 'insensitive' } },
-          { artist: { name: { contains: query, mode: 'insensitive' } } }
-        ]
-      },
-      include: {
-        artist: true,
-        sources: true
-      },
-      take: 3
-    });
+    let matchingLocalTracks: any[] = [];
+    let topSpotTrack: any = null;
 
-    let topSpotTrack: any = matchingLocalTracks[0] || null;
-    
-    // Si no hay match local con la búsqueda, forzamos un artista verificado de Dignify como curación obligatoria en el Top Spot
-    if (!topSpotTrack) {
-        topSpotTrack = await (this.prisma.track as any).findFirst({
-          where: {
-            status: 'APPROVED',
-            artist: { isVerified: true },
-            sources: {
-              some: { provider: 'DIGNIFY' }
-            }
-          },
-          include: {
-            artist: true,
-            sources: true
-          },
-          orderBy: { updatedAt: 'desc' }
-        });
+    try {
+      // 1. Prioridad Independiente (DIGNIFY DIRECTO)
+      matchingLocalTracks = await (this.prisma.track as any).findMany({
+        where: {
+          status: 'APPROVED',
+          artist: { isVerified: true }, // PRIORIDAD VERIFICADOS
+          OR: [
+            { title: { contains: query, mode: 'insensitive' } },
+            { artist: { name: { contains: query, mode: 'insensitive' } } }
+          ]
+        },
+        include: {
+          artist: true,
+          sources: true
+        },
+        take: 3
+      });
+
+      topSpotTrack = matchingLocalTracks[0] || null;
+      
+      // Si no hay match local con la búsqueda, forzamos un artista verificado de Dignify como curación obligatoria en el Top Spot
+      if (!topSpotTrack) {
+          topSpotTrack = await (this.prisma.track as any).findFirst({
+            where: {
+              status: 'APPROVED',
+              artist: { isVerified: true },
+              sources: {
+                some: { provider: 'DIGNIFY' }
+              }
+            },
+            include: {
+              artist: true,
+              sources: true
+            },
+            orderBy: { updatedAt: 'desc' }
+          });
+      }
+    } catch (e) {
+      console.error('Database connection failed during search initial check. Proceeding with external results only.', e);
+      matchingLocalTracks = [];
+      topSpotTrack = null;
     }
 
-    // 2. Búsqueda agregada
-    const rawResults: RawSourceData[] = await this.sourcesService.searchAll(query, 10);
+    // 2. Búsqueda agregada (Ajustamos a 25 para equilibrio entre abundancia y velocidad)
+    const rawResults: RawSourceData[] = await this.sourcesService.searchAll(query, 25);
 
     const groupedTracks = new Map<string, {
        artist: string;
@@ -102,8 +112,90 @@ export class SearchService {
       }
     });
 
-    const resolvedResults = await Promise.all(
-      Array.from(groupedTracks.values()).map(async (group) => {
+    // 3. Resolución PROACTIVA de YouTube para resultados que no lo tienen
+    // Esto asegura que al pulsar Play, el ID ya esté listo.
+    const groupsArray = Array.from(groupedTracks.values());
+    const youtubeConnector = (this.sourcesService as any).connectors.find((c: any) => c.constructor.name === 'YoutubeConnector');
+
+    // Solo resolvemos los primeros 12 para mantener la velocidad
+    for (let i = 0; i < Math.min(groupsArray.length, 12); i++) {
+      const group = groupsArray[i];
+      const hasYoutube = group.sources.some(s => s.provider === 'YOUTUBE');
+      
+      if (!hasYoutube && youtubeConnector) {
+        try {
+          // Búsqueda rápida y específica
+          const ytMatch = await youtubeConnector.search(`${group.artist} ${group.title}`, 1);
+          if (ytMatch && ytMatch.length > 0) {
+            group.sources.push(ytMatch[0]);
+          }
+        } catch (e) {
+          // Si falla, seguimos adelante
+        }
+      }
+    }
+
+    const resolvedResults: SearchResult[] = groupsArray.map(group => {
+      const ytSource = group.sources.find(s => s.provider === 'YOUTUBE');
+      return {
+        id: ytSource?.providerId || group.sources[0].providerId,
+        internalTrackId: 'temp-' + group.sources[0].providerId,
+        artist: group.artist,
+        title: group.title,
+        genre: group.genre,
+        duration: group.duration,
+        thumbnailUrl: group.thumbnailUrl,
+        sources: group.sources.map(raw => ({
+          provider: raw.provider,
+          providerId: raw.providerId,
+          url: raw.url,
+          quality: raw.quality,
+          isOfficial: this.metadataResolver.resolveTrack(raw.title, raw.artistName).isOfficial,
+        }))
+      };
+    });
+
+    // Sincronización en SEGUNDO PLANO mejorada
+    this.backgroundSync(groupsArray).catch(() => {});
+
+    let finalResults: SearchResult[] = [];
+    
+    if (topSpotTrack) {
+      const topResult: SearchResult = {
+        id: topSpotTrack.sources.find((s: any) => s.provider === 'YOUTUBE')?.providerId || topSpotTrack.id,
+        internalTrackId: topSpotTrack.id,
+        artist: topSpotTrack.artist.name,
+        title: topSpotTrack.title,
+        genre: (topSpotTrack as any).genre || undefined,
+        thumbnailUrl: topSpotTrack.thumbnailUrl || undefined,
+        cause: (topSpotTrack as any).cause || undefined,
+        sources: topSpotTrack.sources.map((src: any) => ({
+          provider: src.provider,
+          providerId: src.providerId,
+          url: src.url,
+          isOfficial: src.isOfficial
+        }))
+      };
+      finalResults.push(topResult);
+    }
+
+    resolvedResults.forEach(res => {
+      const isDuplicate = topSpotTrack && res.sources.some(s => 
+        topSpotTrack.sources.some((ts: any) => ts.providerId === s.providerId)
+      );
+      if (isDuplicate) return;
+      finalResults.push(res);
+    });
+
+    return finalResults;
+  }
+
+  /**
+   * Procesa y guarda los temas en la base de datos sin bloquear la respuesta del usuario
+   */
+  private async backgroundSync(groups: any[]) {
+    for (const group of groups) {
+      try {
         const artist = await this.prisma.artist.upsert({
           where: { name: group.artist },
           update: {},
@@ -112,10 +204,7 @@ export class SearchService {
 
         const track = await (this.prisma.track as any).upsert({
           where: {
-            title_artistId: {
-              title: group.title,
-              artistId: artist.id,
-            },
+            title_artistId: { title: group.title, artistId: artist.id },
           },
           update: {
             updatedAt: new Date(),
@@ -132,19 +221,13 @@ export class SearchService {
           },
         });
 
-        await Promise.all(group.sources.map(async rawTrack => {
+        for (const rawTrack of group.sources) {
           const isOfficial = this.metadataResolver.resolveTrack(rawTrack.title, rawTrack.artistName).isOfficial;
           await this.prisma.source.upsert({
             where: {
-              provider_providerId: {
-                provider: rawTrack.provider,
-                providerId: rawTrack.providerId,
-              },
+              provider_providerId: { provider: rawTrack.provider, providerId: rawTrack.providerId },
             },
-            update: {
-              updatedAt: new Date(),
-              url: rawTrack.url,
-            },
+            update: { updatedAt: new Date(), url: rawTrack.url },
             create: {
               trackId: track.id,
               provider: rawTrack.provider,
@@ -154,54 +237,14 @@ export class SearchService {
               isOfficial,
             },
           });
-        }));
-
-        this.semanticService.indexTrack(track.id, group.title, group.artist).catch(console.error);
-
-        return {
-          id: group.sources[0].providerId, 
-          internalTrackId: track.id,
-          artist: group.artist,
-          title: group.title,
-          genre: group.genre,
-          duration: group.duration,
-          thumbnailUrl: group.thumbnailUrl,
-          sources: group.sources.map(raw => ({
-             provider: raw.provider,
-             url: raw.url,
-             quality: raw.quality,
-             isOfficial: this.metadataResolver.resolveTrack(raw.title, raw.artistName).isOfficial,
-          }))
-        };
-      })
-    );
-
-    let finalResults: SearchResult[] = [];
-    
-    if (topSpotTrack) {
-      const topResult: SearchResult = {
-        id: topSpotTrack.sources[0]?.providerId || topSpotTrack.id,
-        internalTrackId: topSpotTrack.id,
-        artist: topSpotTrack.artist.name,
-        title: topSpotTrack.title,
-        genre: (topSpotTrack as any).genre || undefined,
-        thumbnailUrl: topSpotTrack.thumbnailUrl || undefined,
-        cause: (topSpotTrack as any).cause || undefined,
-        sources: topSpotTrack.sources.map((src: any) => ({
-          provider: src.provider,
-          url: src.url,
-          isOfficial: src.isOfficial
-        }))
-      };
-      finalResults.push(topResult);
+        }
+        
+        // Indexamos para búsqueda semántica
+        await this.semanticService.indexTrack(track.id, group.title, group.artist).catch(() => {});
+      } catch (e) {
+        // Silenciamos errores de fondo para no afectar al usuario
+      }
     }
-
-    resolvedResults.forEach(res => {
-      if (topSpotTrack && res.internalTrackId === topSpotTrack.id) return;
-      finalResults.push(res);
-    });
-
-    return finalResults;
   }
 
   async getRecommended(userEmail?: string): Promise<SearchResult[]> {
@@ -240,6 +283,7 @@ export class SearchService {
        cause: trk.cause || undefined,
        sources: trk.sources.map((src: any) => ({
          provider: src.provider,
+         providerId: src.providerId || '',
          url: src.url,
          isOfficial: src.isOfficial
        }))

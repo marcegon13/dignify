@@ -1,83 +1,74 @@
-import NextAuth from 'next-auth';
-import GoogleProvider from 'next-auth/providers/google';
-import SpotifyProvider from 'next-auth/providers/spotify';
-import { PrismaAdapter } from '@auth/prisma-adapter';
-// En lugar de importar desde `@prisma/client` directamente y sufrir problemas de paths
-// Importamos de nuestro package monorepo que ya tiene el cliente generado
-import { PrismaClient } from '@dignify/database';
+import NextAuth, { type NextAuthOptions } from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+// 1. IMPORTA LA INSTANCIA DESDE TU NUEVO ARCHIVO
+import { prisma } from "@/lib/prisma"; // Ajusta la ruta según dónde guardaste prisma.ts
 
-import CredentialsProvider from 'next-auth/providers/credentials';
+const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET ?? "dev-secret",
 
-const prisma = new PrismaClient();
+  // 2. USA LA INSTANCIA COMPARTIDA
+  adapter: PrismaAdapter(prisma as any),
 
-const handler = NextAuth({
-  adapter: PrismaAdapter(prisma) as any,
   providers: [
     CredentialsProvider({
-      name: 'Modo Desarrollo (Ingreso Directo)',
+      name: "Modo Desarrollo",
       credentials: {
-        email: { label: "Tu Email de Prueba", type: "email", placeholder: "artista@dignify.xyz" }
+        email: { label: "Email", type: "email" },
       },
-      async authorize(credentials) {
+      async authorize(credentials: any) {
         if (!credentials?.email) return null;
-        
-        let user = await prisma.user.findUnique({ where: { email: credentials.email } });
-        
+
+        // 3. AQUÍ YA USAS EL PRISMA QUE VIENE DEL SINGLETON
+        let user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+        });
+
         if (!user) {
           user = await prisma.user.create({
             data: {
               email: credentials.email,
-              name: credentials.email.split('@')[0],
-              image: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=400&h=400&fit=crop"
-            }
+              name: credentials.email.split("@")[0],
+            },
           });
         }
-        
+
         return {
           id: user.id,
-          name: user.name,
           email: user.email,
-          image: user.image,
-          role: user.role
+          name: user.name,
         };
-      }
+      },
     }),
+
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || 'ID-simulado',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'Secret-simulado',
-    }),
-    SpotifyProvider({
-      clientId: process.env.SPOTIFY_CLIENT_ID || 'ID-simulado',
-      clientSecret: process.env.SPOTIFY_CLIENT_SECRET || 'Secret-simulado',
+      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
     }),
   ],
-  session: { 
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  callbacks: {
-    async jwt({ token, user, trigger, session }) {
-      if (user) {
-        const u = user as any;
-        token.role = u.role || 'USER';
-        token.id = u.id;
-      }
 
-      // Handle profile updates manually if needed
-      if (trigger === "update" && session?.name) {
-        token.name = session.name;
+  session: {
+    strategy: "jwt",
+  },
+
+  callbacks: {
+    async jwt({ token, user }: any) {
+      if (user) {
+        token.id = user.id;
       }
-      
       return token;
     },
-    async session({ session, token }) {
+
+    async session({ session, token }: any) {
       if (session.user) {
-        (session.user as any).role = token.role;
         (session.user as any).id = token.id;
       }
       return session;
-    }
-  }
-});
+    },
+  },
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
