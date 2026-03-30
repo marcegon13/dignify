@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Outfit } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import { Providers } from '@/lib/providers';
 import { Player } from '@/components/player/Player';
 import Sidebar from '@/components/layout/Sidebar';
@@ -10,9 +10,9 @@ import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import { InstallPrompt } from '@/components/shared/InstallPrompt';
 import '../globals.css';
 
-const outfit = Outfit({
+const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-outfit',
+  variable: '--font-inter',
 });
 
 export const viewport: Viewport = {
@@ -72,7 +72,7 @@ export default async function RootLayout(props: {
   if (!dict) return null;
 
   return (
-    <div className={`${outfit.variable} font-sans dark flex flex-col min-h-screen`}>
+    <div className={`${inter.variable} font-sans dark flex flex-col min-h-screen`}>
       <ErrorBoundary>
         <I18nProvider dict={dict} lang={lang}>
           <Providers>

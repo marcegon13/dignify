@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export interface QueuedTrack {
-  id: string; // providerId
+  id: string; // providerId / URL
   internalTrackId?: string; // DB ID
   title: string;
   artist: string;
@@ -13,6 +13,7 @@ export interface QueuedTrack {
 
 interface PlayerState {
   currentTrack: QueuedTrack | null;
+  queue: QueuedTrack[];
   isPlaying: boolean;
   isBuffering: boolean;
   volume: number;
@@ -21,7 +22,10 @@ interface PlayerState {
   duration: number;
   seekPosition: number | null;
   isAdDetected: boolean;
+  
   setTrack: (track: QueuedTrack) => void;
+  addToQueue: (track: QueuedTrack) => void;
+  nextTrack: () => void;
   setAdDetected: (state: boolean) => void;
   play: () => void;
   pause: () => void;
@@ -37,8 +41,9 @@ interface PlayerState {
 
 export const usePlayerStore = create<PlayerState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       currentTrack: null,
+      queue: [],
       isPlaying: false,
       isBuffering: false,
       volume: 100,
@@ -47,7 +52,34 @@ export const usePlayerStore = create<PlayerState>()(
       duration: 0,
       seekPosition: null,
       isAdDetected: false,
-      setTrack: (track) => set({ currentTrack: track, isPlaying: true, isBuffering: true, currentTime: 0, duration: 0, isAdDetected: false }),
+
+      setTrack: (track) => set({ 
+        currentTrack: track, 
+        isPlaying: true, 
+        isBuffering: true, 
+        currentTime: 0, 
+        duration: 0, 
+        isAdDetected: false 
+      }),
+
+      addToQueue: (track) => set((state) => ({ 
+        queue: [...state.queue, track] 
+      })),
+
+      nextTrack: () => {
+        const { queue } = get();
+        if (queue.length > 0) {
+          const next = queue[0];
+          set({ 
+            currentTrack: next, 
+            queue: queue.slice(1), 
+            isPlaying: true, 
+            isBuffering: true, 
+            currentTime: 0 
+          });
+        }
+      },
+
       setAdDetected: (state) => set({ isAdDetected: state }),
       play: () => set({ isPlaying: true }),
       pause: () => set({ isPlaying: false, isBuffering: false }),
@@ -60,7 +92,7 @@ export const usePlayerStore = create<PlayerState>()(
       setProgress: (currentTime, duration) => set({ currentTime, duration }),
       seekTo: (seconds) => set({ seekPosition: seconds }),
       clearSeek: () => set({ seekPosition: null }),
-      stop: () => set({ currentTrack: null, isPlaying: false, isBuffering: false, currentTime: 0, duration: 0 }),
+      stop: () => set({ currentTrack: null, queue: [], isPlaying: false, isBuffering: false, currentTime: 0, duration: 0 }),
     }),
     {
       name: 'dignify-player-storage',

@@ -3,7 +3,7 @@ import { PrismaService } from '../common/prisma.service';
 
 @Injectable()
 export class FavoritesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async toggleFavorite(email: string, trackId: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
@@ -67,18 +67,18 @@ export class FavoritesService {
       orderBy: { createdAt: 'desc' }
     });
 
-    return favorites.map(f => ({
-         id: f.track.sources[0]?.providerId || f.track.id.toString(),
-         internalTrackId: f.track.id,
-         artist: f.track.artist.name,
-         title: f.track.title,
-         duration: f.track.duration || undefined,
-         thumbnailUrl: f.track.thumbnailUrl || undefined,
-         sources: f.track.sources.map((src: any) => ({
-           provider: src.provider,
-           url: src.url,
-           isOfficial: src.isOfficial
-         }))
+    return favorites.map((f: any) => ({
+      id: f.track.sources[0]?.providerId || f.track.id.toString(),
+      internalTrackId: f.track.id,
+      artist: f.track.artist.name,
+      title: f.track.title,
+      duration: f.track.duration || undefined,
+      thumbnailUrl: f.track.thumbnailUrl || undefined,
+      sources: f.track.sources.map((src: any) => ({
+        provider: src.provider,
+        url: src.url,
+        isOfficial: src.isOfficial
+      }))
     }));
   }
 }

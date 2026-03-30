@@ -4,11 +4,13 @@ import { PrismaService } from '../common/prisma.service';
 import { StorageService } from '../common/storage.service';
 import { TrackStatus } from '@dignify/database';
 
+import { StreamingService } from './streaming.service';
+
 @Controller('tracks')
 export class TracksController {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly storage: StorageService
+    private readonly streaming: StreamingService
   ) { }
 
   @Get('artist/:email')
@@ -27,7 +29,7 @@ export class TracksController {
       orderBy: { updatedAt: 'desc' }
     });
 
-    const formatted = tracks.map((trk) => ({
+    const formatted = tracks.map((trk: any) => ({
       id: trk.sources?.[0]?.url || trk.id,
       internalTrackId: trk.id,
       artist: trk.artist.name,
@@ -44,58 +46,11 @@ export class TracksController {
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadTrack(
-    @UploadedFile() file: any, // Express.Multer.File if @types/multer is installed
+    @UploadedFile() file: any,
     @Body() dto: { title: string; genre: string; userEmail: string; coverUrl?: string; cause?: string }
   ) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.userEmail } });
-    if (!user) throw new NotFoundException("Usuario no encontrado.");
-
-    if (user.role !== 'ARTIST') {
-      throw new ForbiddenException("Solo los usuarios con rol de ARTISTA pueden cargar tracks.");
-    }
-
-    const userNameOrEmail = user.name || (user.email ? user.email.split('@')[0] : 'Unknown');
-    let artist = await this.prisma.artist.findFirst({ where: { name: userNameOrEmail } });
-
-    if (!artist) {
-      artist = await this.prisma.artist.create({
-        data: {
-          name: userNameOrEmail,
-          slug: userNameOrEmail.toLowerCase().replace(/\s+/g, '-'),
-          isVerified: true
-        }
-      });
-    }
-
-    let fileUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"; 
-
-    if (file) {
-      fileUrl = await this.storage.uploadFile(file, 'audio');
-    }
-
-    const newTrack = await this.prisma.track.create({
-      data: {
-        title: dto.title,
-        artistId: artist.id,
-        discovererId: user.id,
-        status: TrackStatus.PENDING,
-        thumbnailUrl: dto.coverUrl || "https://images.unsplash.com/photo-1516280440502-86ed0ee20078?q=80&w=500&auto=format&fit=crop",
-        duration: 0,
-        cause: dto.cause || null,
-        genre: dto.genre,
-        sources: {
-          create: {
-            provider: 'DIGNIFY',
-            providerId: fileUrl,
-            url: fileUrl,
-            isOfficial: true,
-            quality: 'HD'
-          }
-        }
-      }
-    });
-
-    return { data: newTrack };
+    const track = await this.streaming.processUpload(file, dto);
+    return { data: track };
   }
 
   @Delete(':id')

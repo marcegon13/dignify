@@ -65,7 +65,11 @@ export default async function ArtistPage({ params: paramsPromise }: { params: Pr
   };
 
   return (
-    <div className="md:ml-0 min-h-screen bg-black overflow-x-hidden">
+    <div className="md:ml-0 min-h-screen bg-black overflow-x-hidden relative">
+      {/* VISUAL WITNESS: Barra amarilla de validación de despliegue */}
+      <div className="fixed top-0 left-0 w-full bg-yellow-500 text-black text-center z-50 font-bold py-1 shadow-lg text-xs uppercase tracking-widest">
+        UI UPDATE ACTIVE - MARCELO
+      </div>
       <ArtistProfileClient artist={artistData} />
     </div>
   );

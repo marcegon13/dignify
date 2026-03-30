@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import * as fs from 'fs';
-import * as path from 'path';
+import fs from 'fs';
+import path from 'path';
+import sharp from 'sharp';
 
 /**
- * STRATEGY: Abstract Storage Service
- * Handles both Cloudflare R2 (S3 compatible) and Local Filesystem fallback.
+ * STRATEGY: Optimized Storage Service with WebP Image Pipeline
  */
 @Injectable()
 export class StorageService {
@@ -24,20 +24,40 @@ export class StorageService {
         endpoint,
         credentials: { accessKeyId, secretAccessKey },
       });
-      this.logger.log('[Storage] Cloudflare R2 initialized.');
-    } else {
-      this.logger.warn('[Storage] R2 credentials missing. Falling back to Local Storage.');
     }
     this.bucketName = process.env.R2_BUCKET_NAME || 'dignify-assets';
   }
 
-  async uploadFile(file: any, folder: 'audio' | 'avatars'): Promise<string> {
-    const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`;
-    
+  async uploadFile(file: any, folder: 'audio' | 'avatars' | 'covers'): Promise<string> {
+    let buffer = file.buffer;
+    let fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`;
+    let mimeType = file.mimetype;
+
+    // PIPELINE INTERCEPTION: Optimize Images (WebP) - 70% optimization target
+    if (folder === 'avatars' || folder === 'covers' || (mimeType && mimeType.startsWith('image/'))) {
+      this.logger.log(`[Storage] Optimizing image ${fileName} for performance (WebP, scale 1000px)...`);
+      try {
+        buffer = await sharp(buffer)
+          .resize({
+            width: 1000,
+            withoutEnlargement: true
+          })
+          .webp({ quality: 80 })
+          .toBuffer();
+
+        // Update metadata for processed image
+        const nameWithoutExt = fileName.includes('.') ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
+        fileName = `${nameWithoutExt}.webp`;
+        mimeType = 'image/webp';
+      } catch (err) {
+        this.logger.error(`[Storage] CRITICAL: Image optimization failed: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
     if (this.s3Client) {
-      return this.uploadToCloud(file.buffer, `${folder}/${fileName}`, file.mimetype);
+      return this.uploadToCloud(buffer, `${folder}/${fileName}`, mimeType);
     } else {
-      return this.uploadToLocal(file.buffer, fileName, folder);
+      return this.uploadToLocal(buffer, fileName, folder);
     }
   }
 
@@ -56,13 +76,13 @@ export class StorageService {
   }
 
   private async uploadToLocal(buffer: Buffer, fileName: string, folder: string): Promise<string> {
-    const uploadDir = path.join(process.cwd(), 'uploads');
+    const uploadDir = path.join(process.cwd(), 'uploads', folder);
     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
     const filePath = path.join(uploadDir, fileName);
     fs.writeFileSync(filePath, buffer);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://dignify.lanubecomputacion.com/api';
-    return `${apiUrl}/uploads/${fileName}`;
+    const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    return `${apiUrl}/uploads/${folder}/${fileName}`;
   }
 }

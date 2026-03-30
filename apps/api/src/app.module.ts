@@ -19,6 +19,7 @@ import { PrismaService } from './common/prisma.service';
 import { S3Service } from './common/s3.service';
 import { StorageService } from './common/storage.service';
 import { UsersService } from './users/users.service';
+import { StreamingService } from './tracks/streaming.service';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { UsersService } from './users/users.service';
     S3Service,
     StorageService,
     UsersService,
+    StreamingService,
   ],
 })
 export class AppModule { }
