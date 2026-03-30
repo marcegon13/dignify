@@ -81,8 +81,8 @@ export function Player() {
   };
 
   return (
-    <div className={!currentTrack ? "hidden" : "fixed bottom-0 left-0 right-0 z-player w-full px-2 md:px-0 pb-[env(safe-area-inset-bottom)] bg-transparent animate-in slide-in-from-bottom-full duration-300"}>
-      <div className="relative w-full md:w-full h-[72px] md:h-[84px] glass-effect !border-0 md:!border-t md:!border-white/10 flex justify-between md:grid md:grid-cols-3 items-center px-3 md:px-6 overflow-hidden md:rounded-none rounded-[32px] mx-auto max-w-[96vw] md:max-w-none shadow-2xl">
+    <div className={!currentTrack ? "hidden" : "fixed bottom-4 left-4 right-4 z-player px-2 md:px-0 animate-in slide-in-from-bottom-full duration-300"}>
+      <div className="relative w-full h-[72px] md:h-[84px] glass-effect !border border-white/10 rounded-2xl flex justify-between md:grid md:grid-cols-3 items-center px-3 md:px-6 overflow-hidden mx-auto shadow-2xl">
         
         {isAdDetected && (
           <div className="absolute inset-0 bg-emerald-500/90 backdrop-blur-md z-player flex items-center justify-center animate-in fade-in zoom-in duration-300">

@@ -10,9 +10,13 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // 1. CORS: Permite que la Web (puerto 3000) se comunique con la API
+  // 1. CORS: Permite que la Web se comunique con la API
   app.enableCors({
-    origin: ['http://localhost:3000'],
+    origin: [
+      'http://localhost:3000',
+      'https://v2-preview.lanubecomputacion.com',
+      'https://dignify.lanubecomputacion.com'
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

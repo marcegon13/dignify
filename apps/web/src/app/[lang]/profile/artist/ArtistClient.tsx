@@ -220,7 +220,7 @@ export default function ArtistDashboard() {
           </div>
           <div>
             <div className="flex items-center space-x-2 mb-1">
-              <h1 className="text-4xl font-extrabold tracking-tight text-white">
+              <h1 className="text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-[#FFEFB7] to-[#E6C200]">
                 {dict.artist.dashboard}
               </h1>
               {userProfile?.isVerified && (

@@ -138,7 +138,7 @@ export function TrackItem({ track }: TrackItemProps) {
 
   return (
     <div 
-      className="group flex flex-col p-4 bg-neutral-900/50 hover:bg-neutral-800 rounded-xl transition-all duration-300 border border-transparent hover:border-neutral-700 cursor-pointer relative"
+      className="group flex flex-col p-4 bg-neutral-900/50 hover:bg-white/5 rounded-xl transition-all duration-300 border border-transparent hover:border-gold-text/40 cursor-pointer relative"
       onClick={handlePlay}
     >
       <div className="relative aspect-square w-full mb-4 overflow-hidden rounded-lg shadow-md">
